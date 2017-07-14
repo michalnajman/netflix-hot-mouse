@@ -2,7 +2,7 @@
 
 ## Description
 
-This tool is useful when used e.g. compute stick without keyboard. This library allows you to control your viewing experience directly from your mouse while watching on your computer browser. See below for a list of all supported mouse commands.
+Simple tool increasing UX while using mouse in netflix web app (useful when used e.g. compute stick without keyboard). This library allows you to control your viewing experience directly from your mouse while watching on your computer browser. See below for a list of all supported mouse commands.
 
 ## Commands
 
