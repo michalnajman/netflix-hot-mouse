@@ -1,18 +1,14 @@
 
-/*
-================================================================
-
+/*================================================================
 This plugin allows you to control your viewing experience directly from your mouse while watching on your computer browser. See below for a list of all supported mouse commands.
 
-Right button click - Toggle Play/Pause
+Right button click - Toggle Play / Pause
 Wheel click - Toggle Full-screen toggle
-Wheel scrolling - Volume Up / Down 
-Wheel scrolling with holding left button -  Subtitles Bigger / Lower D (this settings is remembered in cookie)
-Wheel scrolling with holding right button -  Rewind / Forward
+Wheel scrolling - Volume Up / Down
+Wheel scrolling with holding left button - Subtitles Bigger / Lower (this settings is remembered in cookie)
+Wheel scrolling with holding right button - Rewind / Forward
 
-================================================================
-
-*/
+================================================================*/
 
 // ==UserScript==
 // @name         netflix-hot-mouse
@@ -26,6 +22,8 @@ Wheel scrolling with holding right button -  Rewind / Forward
 (function netflixHotMouse() {
     "use strict";
 
+
+    // get jQuery for DOM manipulation
     let script = document.createElement("script");
     script.src = "https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js";
     script.type = "text/javascript";
