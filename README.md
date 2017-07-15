@@ -9,8 +9,8 @@ Simple tool increasing UX while using mouse in netflix web app (useful when used
 * Right button click - Toggle Play / Pause
 * Wheel click - Toggle Full-screen toggle
 * Wheel scrolling - Volume Up / Down 
-* Wheel scrolling with holding left button -  Subtitles Bigger / Lower (this settings is remembered in cookie)
-* Wheel scrolling with holding right button -  Rewind / Forward
+* Wheel scrolling with hold left button -  Subtitles Bigger / Lower (this settings is remembered in cookie)
+* Wheel scrolling with hold right button -  Rewind / Forward
 
 
 ## Installing
