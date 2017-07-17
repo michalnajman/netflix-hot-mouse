@@ -8,12 +8,12 @@ Simple tool increasing UX while using mouse in netflix web app (useful when used
 
 * Right button click - Toggle Play / Pause
 * Wheel scrolling - Volume Up / Down 
-* Wheel scrolling with hold left button - Subtitles Lower / Bigger (size beetwen from 0px to 57px, this settings is remembered in cookie)
+* Wheel scrolling with hold left button - Subtitles Lower / Bigger (size beetwen from 0px to 67px, this settings is remembered in the cookie)
 * Wheel scrolling with hold right button - Rewind / Forward
-* Wheel click - context action, one from list:
-   * If you are on netflix site, but you aren't watching video - redirect to last watched video,
-   * If option "skip credits" currently is enabled, trigger skip credits,
-   * Toggle Full-screen toggle
+* Wheel click - Context action, one from list:
+   * If you are on netflix site, but you aren't watching video - redirect to last watched video (remembered in the cookie)
+   * If option "skip credits" currently is enabled, trigger skip credits
+   * Otherwise toggle full-screen
 
 ## Installing
 
