@@ -19,7 +19,7 @@ Simple tool increasing UX while using mouse in netflix web app (useful when used
 
 1. Install Tampermonkey in your browser ([Google Chrome](https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo?hl=en) or [Mozilla Firefox](https://addons.mozilla.org/pl/firefox/addon/tampermonkey/) )
 1. Click on Tampermonkey icon, choose "Add a new script"
-1. Paste content from index.js
+1. Paste all code from index.js
 1. Open video on netflix.com and enjoy using your mouse!
 
 ## License
