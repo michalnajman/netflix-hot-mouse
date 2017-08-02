@@ -9,13 +9,12 @@ This plugin allows you to control your viewing experience directly from your mou
    * If you are on netflix site, but you aren't watching video - redirect to last watched video (remembered in the cookie)
    * If option "skip credits" currently is enabled, trigger skip credits
    * Otherwise toggle full-screen
-
-   
+      
 ================================================================*/
 
 // ==UserScript==
 // @name         netflix-hot-mouse
-// @version      0.9
+// @version      0.95
 // @description  tool increasing UX while using mouse in netflix web app
 // @author       Michał Najman (https://github.com/michalnajman)
 // @include      https://*netflix.com*
@@ -138,6 +137,8 @@ This plugin allows you to control your viewing experience directly from your mou
 
             function createLogic() {
 
+                var $infoPanel = null;
+
                 function playToggle(showInfo) {
 
                     if (showInfo) {
@@ -146,16 +147,25 @@ This plugin allows you to control your viewing experience directly from your mou
                         if (isVideoRunning) {
                             let videoPercentProgress = $(".player-slider").attr("aria-valuenow");
 
-                            $(".nhm-info").stop(true, false).animate({ opacity: 0.8 }, 300);
-                            $(".nhm-info-value").html($(".player-slider label").html());
-                            $(".nhm-info-fill").css("width", videoPercentProgress + "%");
+                            $infoPanel.stop(true, false).animate({ opacity: 1 }, 300);
+                            $infoPanel.find(".nhm-info-value").html(formatTime($(".player-controls-wrapper label").html()));
+                            $infoPanel.find(".nhm-info-fill").css("width", videoPercentProgress + "%");
                         } else {
-                            $(".nhm-info").stop(true, false).animate({ opacity: 0 }, 300);
+                            $infoPanel.stop(true, false).animate({ opacity: 0 }, 300);
                         }
                     }
 
                     $(".icon-player-pause, .icon-player-play").trigger("click");
                     helper.log("Play/pause", "toggled");
+                }
+
+                function formatTime(time) {
+                    let parts = time.split(":"),
+                        minutes = parts[0],
+                        seconds = parts[1];
+
+                    let formatSmallText = (value) => { return `<span style='font-size: 24px'>${value}</span>`; };
+                    return `${formatSmallText("left:")} ${minutes} ${formatSmallText("min.")} ${seconds} ${formatSmallText("sec.")}`;
                 }
 
                 function changeSubtitlesSize(direction) {
@@ -201,6 +211,18 @@ This plugin allows you to control your viewing experience directly from your mou
                 let currentVideoUrl = {
                     cookieName: "last-video-url",
 
+                    monitor: function() {
+                        let currentUrl = window.location.href,
+                            context = this;
+
+                        setInterval(() => {
+                            if (currentUrl !== window.location.href) {
+                                currentUrl = window.location.href;
+                                context.set();
+                                helper.log("Video", "url changed");
+                            }
+                        }, 10000);
+                    },
                     set: function() {
                         if (window.location.pathname.indexOf("/watch/") === 0) {
                             helper.createCookie(this.cookieName, window.location.href);
@@ -232,6 +254,19 @@ This plugin allows you to control your viewing experience directly from your mou
                     helper.log("Scroll video", `direction: ${direction}`);
                 }
 
+                function monitorUserActions() {
+                    // dirty hack, e.g. user start playing video by keyboard
+                    setInterval(() => {
+                        let isVideoRunning = $(".icon-player-pause").length === 1;
+                        if (isVideoRunning) {
+                            // hide info panel when video is playing
+                            if (parseFloat($infoPanel.css("opacity")) > 0) {
+                                $infoPanel.stop(true, false).animate({ opacity: 0 }, 300);
+                            }
+                        }
+                    }, 1000);
+                }
+
                 function addPauseHtml() {
                     $("body").append($("<div/>", {
                         class: "nhm-info",
@@ -242,44 +277,52 @@ This plugin allows you to control your viewing experience directly from your mou
                             left: "50%",
                             top: "50%",
                             "text-align": "center",
-                            background: "#000",
-                            border: "5px solid #AC090B",
+                            background: "rgba(0,0,0,0.6)",
+                            border: "7px solid rgba(172, 9, 11, 0.8)",
                             "border-radius": "10px",
                             position: "fixed",
                             "z-index": "2147483647",
                             font: "bold 60px Arial",
-                            overflow: "hidden",
                             color: "#fff",
-                            opacity: 0
+                            opacity: 0,
+                            "pointer-events": "none"
                         }
                     }));
 
-                    $(".nhm-info").append($("<div/>", {
+                    var $infoPanel = $(".nhm-info");
+
+                    $infoPanel.append($("<div/>", {
                         class: "nhm-info-value",
-                        html: "00:00",
+                        html: "",
                         css: {
-                            "line-height": "100px"
+                            "line-height": "100px",
+                            "pointer-events": "none"
                         }
                     }));
 
-                    $(".nhm-info").append($("<div/>", {
+                    $infoPanel.append($("<div/>", {
                         class: "nhm-info-fill",
                         css: {
-                            background: "#AC090B",
+                            background: "rgba(172, 9, 11, 0.8)",
                             display: "block",
                             width: "0%",
                             height: "100%",
                             "z-index": "-1",
                             position: "absolute",
                             left: "0",
-                            bottom: "0"
+                            bottom: "0",
+                            "pointer-events": "none"
                         }
                     }));
+
+                    return $infoPanel;
                 }
 
                 function init() {
-                    addPauseHtml();
+
+                    $infoPanel = addPauseHtml();
                     changeSubtitlesSize(0);
+                    monitorUserActions();
                     currentVideoUrl.set(); // if current url is video, save it into the cookie
                     helper.log("Initialized", "done");
 
