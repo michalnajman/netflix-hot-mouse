@@ -323,7 +323,7 @@ This plugin allows you to control your viewing experience directly from your mou
                     $infoPanel = addPauseHtml();
                     changeSubtitlesSize(0);
                     monitorUserActions();
-                    currentVideoUrl.set(); // if current url is video, save it into the cookie
+                    currentVideoUrl.monitor();
                     helper.log("Initialized", "done");
 
                     return {
