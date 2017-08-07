@@ -160,12 +160,15 @@ This plugin allows you to control your viewing experience directly from your mou
                 }
 
                 function formatTime(time) {
-                    let parts = time.split(":"),
-                        minutes = parts[0],
-                        seconds = parts[1];
+                    let parts = time.split(":").reverse(),
+                        minutes = 0;
+
+                    for (let i = 1; i < parts.length; i++) {
+                        minutes += parseInt(parts[i]) * Math.pow(60, i - 1);
+                    }
 
                     let formatSmallText = (value) => { return `<span style='font-size: 24px'>${value}</span>`; };
-                    return `${formatSmallText("left:")} ${minutes} ${formatSmallText("min.")} ${seconds} ${formatSmallText("sec.")}`;
+                    return `${formatSmallText("left:")} ${minutes} ${formatSmallText("min.")}`;
                 }
 
                 function changeSubtitlesSize(direction) {
