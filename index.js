@@ -3,7 +3,7 @@ This plugin allows you to control your viewing experience directly from your mou
 
 * Right button click - Toggle Play / Pause
 * Wheel scrolling - Volume Up / Down 
-* Wheel scrolling with hold left button - Subtitles Lower / Bigger (size beetwen from 0px to 67px, this settings is remembered in the cookie)
+* Wheel scrolling with hold left button - Subtitles Lower / Bigger (size beetwen from 0px to 80px, this settings is remembered in the cookie)
 * Wheel scrolling with hold right button - Rewind / Forward
 * Wheel click - Context action, one from list:
    * If you are on netflix site, but you aren't watching video - redirect to last watched video (remembered in the cookie)
@@ -179,8 +179,8 @@ This plugin allows you to control your viewing experience directly from your mou
 
                     if (cookieSubtitlesSize < 0) {
                         cookieSubtitlesSize = 0;
-                    } else if (cookieSubtitlesSize > 67) { // max predefined size in netflix
-                        cookieSubtitlesSize = 67;
+                    } else if (cookieSubtitlesSize > 80) { // little more than max predefined size in netflix
+                        cookieSubtitlesSize = 80;
                     }
 
                     helper.createCookie(cookieName, cookieSubtitlesSize);
