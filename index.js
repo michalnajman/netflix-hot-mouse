@@ -2,14 +2,14 @@
 This plugin allows you to control your viewing experience directly from your mouse while watching on your computer browser. See below for a list of all supported mouse commands.
 
 * Right button click - Toggle Play / Pause
-* Wheel scrolling - Volume Up / Down 
+* Wheel scrolling - Volume Up / Down
 * Wheel scrolling with hold left button - Subtitles Lower / Bigger (size beetwen from 0px to 80px, this settings is remembered in the cookie)
 * Wheel scrolling with hold right button - Rewind / Forward
 * Wheel click - Context action, one from list:
    * If you are on netflix site, but you aren't watching video - redirect to last watched video (remembered in the cookie)
    * If option "skip credits" currently is enabled, trigger skip credits
    * Otherwise toggle full-screen
-      
+
 ================================================================*/
 
 // ==UserScript==
@@ -55,7 +55,12 @@ This plugin allows you to control your viewing experience directly from your mou
                 },
 
                 addHeadStyle: function(style) {
-                    $("head").append(`<style type='text/css'>${style}</style>`);
+                    $("head").append(`
+                    <style type='text/css'>
+                        $ {
+                            style;
+                        }
+                    </style>`);
                 },
 
                 log: function(key, value) {
@@ -142,8 +147,8 @@ This plugin allows you to control your viewing experience directly from your mou
                 function playToggle(showInfo) {
 
                     if (showInfo) {
-                        let isVideoRunning = $(".icon-player-pause").length === 1;
 
+                        let isVideoRunning = $(".icon-player-pause").length === 1;
                         if (isVideoRunning) {
                             let videoPercentProgress = $(".player-slider").attr("aria-valuenow");
 
@@ -152,6 +157,13 @@ This plugin allows you to control your viewing experience directly from your mou
                             $infoPanel.find(".nhm-info-fill").css("width", videoPercentProgress + "%");
                         } else {
                             $infoPanel.stop(true, false).animate({ opacity: 0 }, 300);
+                        }
+
+                        if (navigator.userAgent.indexOf("Firefox") > 0) {
+                            let isFullScreenMode = $(".icon-player-windowed-screen").length === 1;
+                            if (isVideoRunning === isFullScreenMode) {
+                                fullscreenToggle();
+                            }
                         }
                     }
 
@@ -215,6 +227,8 @@ This plugin allows you to control your viewing experience directly from your mou
                     cookieName: "last-video-url",
 
                     monitor: function() {
+                        this.set();
+
                         let currentUrl = window.location.href,
                             context = this;
 
@@ -271,7 +285,7 @@ This plugin allows you to control your viewing experience directly from your mou
                 }
 
                 function addPauseHtml() {
-                    $("body").append($("<div/>", {
+                    $("body").append($("<div />", {
                         class: "nhm-info",
                         css: {
                             transform: "translate(-50%, -50%)",
@@ -294,7 +308,7 @@ This plugin allows you to control your viewing experience directly from your mou
 
                     var $infoPanel = $(".nhm-info");
 
-                    $infoPanel.append($("<div/>", {
+                    $infoPanel.append($("<div />", {
                         class: "nhm-info-value",
                         html: "",
                         css: {
@@ -303,7 +317,7 @@ This plugin allows you to control your viewing experience directly from your mou
                         }
                     }));
 
-                    $infoPanel.append($("<div/>", {
+                    $infoPanel.append($("<div />", {
                         class: "nhm-info-fill",
                         css: {
                             background: "rgba(172, 9, 11, 0.8)",
