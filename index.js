@@ -1,6 +1,5 @@
 /*================================================================
 This plugin allows you to control your viewing experience directly from your mouse while watching on your computer browser. See below for a list of all supported mouse commands.
-
 * Right button click - Toggle Play / Pause
 * Wheel scrolling - Volume Up / Down
 * Wheel scrolling with hold left button - Subtitles Lower / Bigger (size beetwen from 0px to 80px, this settings is remembered in the cookie)
@@ -9,7 +8,6 @@ This plugin allows you to control your viewing experience directly from your mou
    * If you are on netflix site, but you aren't watching video - redirect to last watched video (remembered in the cookie)
    * If option "skip credits" currently is enabled, trigger skip credits
    * Otherwise toggle full-screen
-
 ================================================================*/
 
 // ==UserScript==
@@ -55,12 +53,7 @@ This plugin allows you to control your viewing experience directly from your mou
                 },
 
                 addHeadStyle: function(style) {
-                    $("head").append(`
-                    <style type='text/css'>
-                        $ {
-                            style;
-                        }
-                    </style>`);
+                    $("head").append(`<style type='text/css'>${style}</style>`);
                 },
 
                 log: function(key, value) {
