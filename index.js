@@ -12,7 +12,7 @@ This plugin allows you to control your viewing experience directly from your mou
 
 // ==UserScript==
 // @name         netflix-hot-mouse
-// @version      0.95
+// @version      0.96n
 // @description  tool increasing UX while using mouse in netflix web app
 // @author       Michał Najman (https://github.com/michalnajman)
 // @include      https://*netflix.com*
@@ -87,7 +87,7 @@ This plugin allows you to control your viewing experience directly from your mou
                         console.log("keyCode mismatch " + oEvent.keyCode + "(" + oEvent.which + ")");
                     }
 
-                    document.dispatchEvent(oEvent);
+                    document.activeElement.dispatchEvent(oEvent);
                 }
             };
 
@@ -129,254 +129,259 @@ This plugin allows you to control your viewing experience directly from your mou
                 });
             }
 
-            /////////////////////////////////////////////////////////////////////////////////
-            // MAIN LOGIC
-            /////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////
+        // MAIN LOGIC
+        /////////////////////////////////////////////////////////////////////////////////
 
-            function createLogic() {
+        function createLogic() {
 
-                var $infoPanel = null;
+            var $infoPanel = null;
 
-                function playToggle(showInfo) {
+            function playToggle(showInfo) {
+                if (showInfo) {
 
-                    if (showInfo) {
+                    let isVideoRunning = $(".button-nfplayerPause").length === 1;
+                    if (isVideoRunning) {
+                        //let videoPercentProgress = $(".scrubber-head").attr("aria-valuenow");
+                        let videoPercentProgress = 
+                            (parseInt($(".scrubber-head").css("left")) / 
+                            parseInt($(".scrubber-head").parent().width())) * 100;
 
-                        let isVideoRunning = $(".icon-player-pause").length === 1;
-                        if (isVideoRunning) {
-                            let videoPercentProgress = $(".player-slider").attr("aria-valuenow");
+                        $infoPanel.stop(true, false).animate({ opacity: 1 }, 300);
+                        $infoPanel.find(".nhm-info-value").html(formatTime($(".time").html()));
+                        $infoPanel.find(".nhm-info-fill").css("width", videoPercentProgress + "%");
+                    } else {
+                        $infoPanel.stop(true, false).animate({ opacity: 0 }, 300);
+                    }
 
-                            $infoPanel.stop(true, false).animate({ opacity: 1 }, 300);
-                            $infoPanel.find(".nhm-info-value").html(formatTime($(".player-controls-wrapper label").html()));
-                            $infoPanel.find(".nhm-info-fill").css("width", videoPercentProgress + "%");
-                        } else {
+                    if (navigator.userAgent.indexOf("Firefox") > 0) {
+                        let isFullScreenMode = $(".button-bvuiFullScreenOn").length === 1;
+                        if (isVideoRunning !== isFullScreenMode) {
+                            fullscreenToggle();
+                        }
+                    }
+                }
+
+                $(".button-nfplayerPlay, .button-nfplayerPause").trigger("click");
+                helper.log("Play/pause", "toggled");
+            }
+
+            function formatTime(time) {
+                let parts = time.split(":").reverse(),
+                    minutes = 0;
+
+                for (let i = 1; i < parts.length; i++) {
+                    minutes += parseInt(parts[i]) * Math.pow(60, i - 1);
+                }
+
+                let formatSmallText = (value) => { return `<span style='font-size: 24px'>${value}</span>`; };
+                return `${formatSmallText("left:")} ${minutes} ${formatSmallText("min.")}`;
+            }
+
+            function changeSubtitlesSize(direction) {
+                let cookieName = "subtitles-size",
+                    cookieSubtitlesSize = parseInt(helper.getCookie(cookieName)) || 32; // default value
+
+                cookieSubtitlesSize += direction;
+
+                if (cookieSubtitlesSize < 0) {
+                    cookieSubtitlesSize = 0;
+                } else if (cookieSubtitlesSize > 80) { // little more than max predefined size in netflix
+                    cookieSubtitlesSize = 80;
+                }
+
+                helper.createCookie(cookieName, cookieSubtitlesSize);
+                helper.addHeadStyle(`.player-timedtext span { font-size : ${cookieSubtitlesSize}px !important; }`);
+                helper.log("Subtitles", cookieSubtitlesSize);
+            }
+
+            function changeVolume(direction) {
+                direction > 0 ?
+                    helper.triggerKeyDownEvent(38) : // up
+                    helper.triggerKeyDownEvent(40); // down
+
+                helper.log("Volume", `direction: ${direction}`);
+            }
+
+            function fullscreenToggle() {
+                $(".button-bvuiFullScreenOn, .button-bvuiFullScreenOff").trigger("click");
+                helper.log("Fullscreen", "toggled");
+            }
+
+            function skipCredits() {
+                if ($(".skip-credits").length === 1) {
+                    $(".skip-credits .nf-flat-button-text").trigger("click");
+                    helper.log("Credits", "skipped");
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+
+            let currentVideoUrl = {
+                cookieName: "last-video-url",
+
+                monitor: function() {
+                    this.set();
+
+                    let currentUrl = window.location.href,
+                        context = this;
+
+                    setInterval(() => {
+                        if (currentUrl !== window.location.href) {
+                            currentUrl = window.location.href;
+                            context.set();
+                            helper.log("Video", "url changed");
+                        }
+                    }, 10000);
+                },
+                set: function() {
+                    if (window.location.pathname.indexOf("/watch/") === 0) {
+                        helper.createCookie(this.cookieName, window.location.href);
+                    }
+                },
+
+                get: function() {
+                    // return only if current url isn't a video
+                    if (window.location.pathname.indexOf("/watch/") === 0) {
+                        return null;
+                    }
+                    return helper.getCookie(this.cookieName);
+                }
+            };
+
+            function makeContextAction() {
+                if (currentVideoUrl.get() != null) {
+                    window.location = currentVideoUrl.get();
+                } else if (!skipCredits()) {
+                    fullscreenToggle();
+                }
+            }
+
+            function moveVideo(direction) {
+                    
+                direction > 0 ?
+                    helper.triggerKeyDownEvent(39) : // forward
+                    helper.triggerKeyDownEvent(37); // backward
+                   
+                helper.triggerKeyDownEvent(32); // backward
+
+                helper.log("Scroll video", `direction: ${direction}`);
+            }
+
+            function monitorUserActions() {
+                // dirty hack, e.g. user start playing video by keyboard
+                setInterval(() => {
+                    let isVideoRunning = $(".button-nfplayerPause").length === 1;
+                    if (isVideoRunning) {
+                        // hide info panel when video is playing
+                        if (parseFloat($infoPanel.css("opacity")) > 0) {
                             $infoPanel.stop(true, false).animate({ opacity: 0 }, 300);
                         }
-
-                        if (navigator.userAgent.indexOf("Firefox") > 0) {
-                            let isFullScreenMode = $(".icon-player-windowed-screen").length === 1;
-                            if (isVideoRunning === isFullScreenMode) {
-                                fullscreenToggle();
-                            }
-                        }
                     }
+                }, 1000);
+            }
 
-                    $(".icon-player-pause, .icon-player-play").trigger("click");
-                    helper.log("Play/pause", "toggled");
-                }
-
-                function formatTime(time) {
-                    let parts = time.split(":").reverse(),
-                        minutes = 0;
-
-                    for (let i = 1; i < parts.length; i++) {
-                        minutes += parseInt(parts[i]) * Math.pow(60, i - 1);
+            function addPauseHtml() {
+                $("body").append($("<div />", {
+                    class: "nhm-info",
+                    css: {
+                        transform: "translate(-50%, -50%)",
+                        width: "1000px",
+                        height: "100px",
+                        left: "50%",
+                        top: "50%",
+                        "text-align": "center",
+                        background: "rgba(0,0,0,0.6)",
+                        border: "7px solid rgba(172, 9, 11, 0.8)",
+                        "border-radius": "10px",
+                        position: "fixed",
+                        "z-index": "2147483647",
+                        font: "bold 60px Arial",
+                        color: "#fff",
+                        opacity: 0,
+                        "pointer-events": "none"
                     }
+                }));
 
-                    let formatSmallText = (value) => { return `<span style='font-size: 24px'>${value}</span>`; };
-                    return `${formatSmallText("left:")} ${minutes} ${formatSmallText("min.")}`;
-                }
+                var $infoPanel = $(".nhm-info");
 
-                function changeSubtitlesSize(direction) {
-                    let cookieName = "subtitles-size",
-                        cookieSubtitlesSize = parseInt(helper.getCookie(cookieName)) || 32; // default value
-
-                    cookieSubtitlesSize += direction;
-
-                    if (cookieSubtitlesSize < 0) {
-                        cookieSubtitlesSize = 0;
-                    } else if (cookieSubtitlesSize > 80) { // little more than max predefined size in netflix
-                        cookieSubtitlesSize = 80;
+                $infoPanel.append($("<div />", {
+                    class: "nhm-info-value",
+                    html: "",
+                    css: {
+                        "line-height": "100px",
+                        "pointer-events": "none"
                     }
+                }));
 
-                    helper.createCookie(cookieName, cookieSubtitlesSize);
-                    helper.addHeadStyle(`.player-timedtext span { font-size : ${cookieSubtitlesSize}px !important; }`);
-                    helper.log("Subtitles", cookieSubtitlesSize);
-                }
-
-                function changeVolume(direction) {
-                    direction > 0 ?
-                        helper.triggerKeyDownEvent(38) : // up
-                        helper.triggerKeyDownEvent(40); // down
-
-                    helper.log("Volume", `direction: ${direction}`);
-                }
-
-                function fullscreenToggle() {
-                    $(".icon-player-full-screen, .icon-player-windowed-screen").trigger("click");
-                    helper.log("Fullscreen", "toggled");
-                }
-
-                function skipCredits() {
-                    if ($(".skip-credits").length === 1) {
-                        $(".skip-credits .nf-flat-button-text").trigger("click");
-                        helper.log("Credits", "skipped");
-                        return true;
-                    } else {
-                        return false;
+                $infoPanel.append($("<div />", {
+                    class: "nhm-info-fill",
+                    css: {
+                        background: "rgba(172, 9, 11, 0.8)",
+                        display: "block",
+                        width: "0%",
+                        height: "100%",
+                        "z-index": "-1",
+                        position: "absolute",
+                        left: "0",
+                        bottom: "0",
+                        "pointer-events": "none"
                     }
-                }
+                }));
 
-                let currentVideoUrl = {
-                    cookieName: "last-video-url",
+                return $infoPanel;
+            }
 
-                    monitor: function() {
-                        this.set();
+            function init() {
 
-                        let currentUrl = window.location.href,
-                            context = this;
-
-                        setInterval(() => {
-                            if (currentUrl !== window.location.href) {
-                                currentUrl = window.location.href;
-                                context.set();
-                                helper.log("Video", "url changed");
-                            }
-                        }, 10000);
-                    },
-                    set: function() {
-                        if (window.location.pathname.indexOf("/watch/") === 0) {
-                            helper.createCookie(this.cookieName, window.location.href);
-                        }
-                    },
-
-                    get: function() {
-                        // return only if current url isn't a video
-                        if (window.location.pathname.indexOf("/watch/") === 0) {
-                            return null;
-                        }
-                        return helper.getCookie(this.cookieName);
-                    }
-                };
-
-                function makeContextAction() {
-                    if (currentVideoUrl.get() != null) {
-                        window.location = currentVideoUrl.get();
-                    } else if (!skipCredits()) {
-                        fullscreenToggle();
-                    }
-                }
-
-                function moveVideo(direction) {
-                    direction > 0 ?
-                        helper.triggerKeyDownEvent(39) : // forward
-                        helper.triggerKeyDownEvent(37); // backward
-
-                    helper.log("Scroll video", `direction: ${direction}`);
-                }
-
-                function monitorUserActions() {
-                    // dirty hack, e.g. user start playing video by keyboard
-                    setInterval(() => {
-                        let isVideoRunning = $(".icon-player-pause").length === 1;
-                        if (isVideoRunning) {
-                            // hide info panel when video is playing
-                            if (parseFloat($infoPanel.css("opacity")) > 0) {
-                                $infoPanel.stop(true, false).animate({ opacity: 0 }, 300);
-                            }
-                        }
-                    }, 1000);
-                }
-
-                function addPauseHtml() {
-                    $("body").append($("<div />", {
-                        class: "nhm-info",
-                        css: {
-                            transform: "translate(-50%, -50%)",
-                            width: "1000px",
-                            height: "100px",
-                            left: "50%",
-                            top: "50%",
-                            "text-align": "center",
-                            background: "rgba(0,0,0,0.6)",
-                            border: "7px solid rgba(172, 9, 11, 0.8)",
-                            "border-radius": "10px",
-                            position: "fixed",
-                            "z-index": "2147483647",
-                            font: "bold 60px Arial",
-                            color: "#fff",
-                            opacity: 0,
-                            "pointer-events": "none"
-                        }
-                    }));
-
-                    var $infoPanel = $(".nhm-info");
-
-                    $infoPanel.append($("<div />", {
-                        class: "nhm-info-value",
-                        html: "",
-                        css: {
-                            "line-height": "100px",
-                            "pointer-events": "none"
-                        }
-                    }));
-
-                    $infoPanel.append($("<div />", {
-                        class: "nhm-info-fill",
-                        css: {
-                            background: "rgba(172, 9, 11, 0.8)",
-                            display: "block",
-                            width: "0%",
-                            height: "100%",
-                            "z-index": "-1",
-                            position: "absolute",
-                            left: "0",
-                            bottom: "0",
-                            "pointer-events": "none"
-                        }
-                    }));
-
-                    return $infoPanel;
-                }
-
-                function init() {
-
-                    $infoPanel = addPauseHtml();
-                    changeSubtitlesSize(0);
-                    monitorUserActions();
-                    currentVideoUrl.monitor();
-                    helper.log("Initialized", "done");
-
-                    return {
-                        playToggle,
-                        moveVideo,
-                        changeSubtitlesSize,
-                        changeVolume,
-                        makeContextAction
-                    };
-                }
+                $infoPanel = addPauseHtml();
+                changeSubtitlesSize(0);
+                monitorUserActions();
+                currentVideoUrl.monitor();
+                helper.log("Initialized", "done");
 
                 return {
-                    init
+                    playToggle,
+                    moveVideo,
+                    changeSubtitlesSize,
+                    changeVolume,
+                    makeContextAction
                 };
             }
 
-            /////////////////////////////////////////////////////////////////////////////////
-            // CONSTRUCTOR
-            /////////////////////////////////////////////////////////////////////////////////
-            (function initialize() {
+            return {
+                init
+            };
+        }
 
-                let logic = createLogic().init();
+        /////////////////////////////////////////////////////////////////////////////////
+        // CONSTRUCTOR
+        /////////////////////////////////////////////////////////////////////////////////
+        (function initialize() {
 
-                createHandlers({
-                    onMouseRightButtonClick: () => { logic.playToggle(true); },
-                    onMouseWheel: (direction, pressedMouseButtonIndex) => {
-                        switch (pressedMouseButtonIndex) {
+            let logic = createLogic().init();
+
+            createHandlers({
+                onMouseRightButtonClick: () => { logic.playToggle(true); },
+                onMouseWheel: (direction, pressedMouseButtonIndex) => {
+                    switch (pressedMouseButtonIndex) {
                         case 1:
                             logic.changeSubtitlesSize(direction);
                             return;
                         case 3:
                             logic.moveVideo(direction);
-                            logic.playToggle(false);
+                            //logic.playToggle(false);
                             return;
                         default:
                             logic.changeVolume(direction);
-                        }
-                    },
-                    onMouseWheelButtonClick: () => { logic.makeContextAction(); }
-                });
-            }());
-        });
-    }
+                    }
+                },
+                onMouseWheelButtonClick: () => { logic.makeContextAction(); }
+            });
+        }());
+    });
+}
 
     // get jQuery for DOM manipulation
     let script = document.createElement("script");
